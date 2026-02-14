@@ -21,7 +21,6 @@ struct SearchPanel: View {
         }
         .onAppear {
             isSearchFocused = true
-            selectAllSearchText()
         }
     }
 
@@ -150,23 +149,6 @@ struct SearchPanel: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-    }
-
-    /// Finds the active field editor in any app window and selects all text.
-    ///
-    /// MenuBarExtra panels don't always register as the key window, so
-    /// `NSApp.sendAction` through the responder chain may not reach the
-    /// field editor. Instead, iterate all windows to find the active one.
-    private func selectAllSearchText() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            for window in NSApp.windows {
-                if let fieldEditor = window.firstResponder as? NSTextView,
-                   fieldEditor.string.isEmpty == false {
-                    fieldEditor.selectAll(nil)
-                    return
-                }
-            }
-        }
     }
 
     private func handleEscape() {
