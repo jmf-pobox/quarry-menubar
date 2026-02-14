@@ -30,6 +30,7 @@ struct SearchPanel: View {
 
     @State private var selectedResult: SearchResult?
     @State private var selectedResultID: SearchResult.ID?
+    @State private var scrollAnchor: UnitPoint = .top
     @FocusState private var isSearchFocused: Bool
 
     private var searchField: some View {
@@ -112,7 +113,7 @@ struct SearchPanel: View {
                 .listStyle(.plain)
                 .onChange(of: selectedResultID) { _, newID in
                     guard let newID else { return }
-                    proxy.scrollTo(newID, anchor: nil)
+                    proxy.scrollTo(newID, anchor: scrollAnchor)
                 }
             }
         case let .empty(query):
@@ -187,6 +188,7 @@ struct SearchPanel: View {
         let ordered = flatResults(from: results)
         guard !ordered.isEmpty else { return .ignored }
 
+        scrollAnchor = offset > 0 ? .bottom : .top
         if let currentID = selectedResultID,
            let currentIndex = ordered.firstIndex(where: { $0.id == currentID }) {
             let newIndex = currentIndex + offset
