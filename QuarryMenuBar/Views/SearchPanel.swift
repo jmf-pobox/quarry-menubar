@@ -42,16 +42,9 @@ struct SearchPanel: View {
                 .onSubmit {
                     viewModel.search()
                 }
-            if !viewModel.query.isEmpty {
-                Button {
-                    viewModel.clear()
-                    selectedResult = nil
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
+                .onExitCommand {
+                    handleEscape()
                 }
-                .buttonStyle(.plain)
-            }
         }
         .padding(10)
     }
@@ -156,6 +149,15 @@ struct SearchPanel: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
+    }
+
+    private func handleEscape() {
+        if selectedResult != nil {
+            selectedResult = nil
+        } else {
+            viewModel.clear()
+            NSApp.keyWindow?.close()
+        }
     }
 
     private func formatLabel(_ format: String) -> String {
