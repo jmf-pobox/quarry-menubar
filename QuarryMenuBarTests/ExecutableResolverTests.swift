@@ -10,12 +10,12 @@ final class ExecutableResolverTests: XCTestCase {
         XCTAssertTrue(paths.contains { $0 == "/opt/homebrew/bin/quarry" })
     }
 
-    func testResolveFindsQuarryOnThisMachine() {
+    func testResolveFindsQuarryOnThisMachine() throws {
         // This test validates the resolver works on the dev machine.
         // It will be skipped in CI where quarry isn't installed.
         let result = ExecutableResolver.resolve()
         if result != nil {
-            XCTAssertTrue(FileManager.default.isExecutableFile(atPath: result!))
+            XCTAssertTrue(try FileManager.default.isExecutableFile(atPath: XCTUnwrap(result)))
         }
     }
 }

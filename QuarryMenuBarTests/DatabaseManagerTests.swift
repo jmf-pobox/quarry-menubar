@@ -125,6 +125,8 @@ final class DatabaseManagerTests: XCTestCase {
 
 final class DatabaseInfoDecodingTests: XCTestCase {
 
+    // MARK: Internal
+
     func testDecodeSingleDatabase() throws {
         let json = """
         [{"name": "demo", "document_count": 28, "size_bytes": 2831155, "size_description": "2.7 MB"}]
