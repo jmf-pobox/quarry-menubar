@@ -30,8 +30,12 @@ struct CLIDatabaseDiscovery: DatabaseDiscovery {
 
     // MARK: Lifecycle
 
-    init(executablePath: String = "/usr/bin/env") {
+    init(
+        executablePath: String = "/usr/bin/env",
+        processArguments: [String]? = nil
+    ) {
         self.executablePath = executablePath
+        self.processArguments = processArguments ?? ["quarry", "databases"]
     }
 
     // MARK: Internal
@@ -71,18 +75,22 @@ struct CLIDatabaseDiscovery: DatabaseDiscovery {
     func discoverDatabases() async throws -> [DatabaseInfo] {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: executablePath)
-        process.arguments = ["quarry", "databases"]
+        process.arguments = processArguments
 
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError = FileHandle.nullDevice
 
-        try process.run()
-
-        // Wait asynchronously to avoid blocking the main thread.
-        await withCheckedContinuation { continuation in
+        // Set terminationHandler BEFORE run() to avoid a race where the
+        // process completes before the handler is registered.
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
             process.terminationHandler = { _ in
                 continuation.resume()
+            }
+            do {
+                try process.run()
+            } catch {
+                continuation.resume(throwing: error)
             }
         }
 
@@ -98,6 +106,7 @@ struct CLIDatabaseDiscovery: DatabaseDiscovery {
     // MARK: Private
 
     private let executablePath: String
+    private let processArguments: [String]
 }
 
 // MARK: - DatabaseManagerError
