@@ -19,6 +19,13 @@ struct SearchPanel: View {
                     .animation(.easeInOut(duration: 0.15), value: viewModel.state)
             }
         }
+        .onAppear {
+            isSearchFocused = true
+            // Select all text after SwiftUI's focus system installs the field editor.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                NSApp.sendAction(#selector(NSText.selectAll(_:)), to: nil, from: nil)
+            }
+        }
     }
 
     // MARK: Private
@@ -26,17 +33,22 @@ struct SearchPanel: View {
     private static let emptyStateTopPadding: CGFloat = 40
 
     @State private var selectedResult: SearchResult?
+    @FocusState private var isSearchFocused: Bool
 
     private var searchField: some View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            SelectAllTextField(
-                placeholder: "Search documents…",
-                text: $viewModel.query,
-                onSubmit: { viewModel.search() },
-                onEscape: { handleEscape() }
-            )
+            TextField("Search documents…", text: $viewModel.query)
+                .textFieldStyle(.plain)
+                .font(.body)
+                .focused($isSearchFocused)
+                .onSubmit {
+                    viewModel.search()
+                }
+                .onExitCommand {
+                    handleEscape()
+                }
         }
         .padding(10)
     }
