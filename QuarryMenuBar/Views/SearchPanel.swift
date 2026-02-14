@@ -26,6 +26,8 @@ struct SearchPanel: View {
 
     // MARK: Private
 
+    private static let emptyStateTopPadding: CGFloat = 40
+
     @State private var selectedResult: SearchResult?
     @FocusState private var isSearchFocused: Bool
 
@@ -62,17 +64,17 @@ struct SearchPanel: View {
                 Text("Type a query to search across all indexed documents.")
                     .font(.subheadline)
                     .foregroundStyle(.tertiary)
-                    .padding(.top, 40)
                 Spacer()
             }
             .frame(maxWidth: .infinity)
+            .padding(.top, Self.emptyStateTopPadding)
         case .loading:
-            VStack(alignment: .center, spacing: 8) {
+            VStack(spacing: 8) {
                 ProgressView("Searching…")
+                Spacer()
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 40)
-            Spacer()
+            .padding(.top, Self.emptyStateTopPadding)
         case let .results(results):
             let grouped = Dictionary(grouping: results, by: \.sourceFormat)
             let sortedKeys = grouped.keys.sorted()
@@ -100,10 +102,10 @@ struct SearchPanel: View {
                 Text("No documents matched \"\(query)\".")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                Spacer()
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 40)
-            Spacer()
+            .padding(.top, Self.emptyStateTopPadding)
         case let .error(message):
             VStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle")
@@ -116,10 +118,10 @@ struct SearchPanel: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
+                Spacer()
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 40)
-            Spacer()
+            .padding(.top, Self.emptyStateTopPadding)
         }
     }
 

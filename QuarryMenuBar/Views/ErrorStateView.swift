@@ -39,13 +39,16 @@ struct ErrorStateView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             }
+
+            Spacer()
         }
         .frame(maxWidth: .infinity)
-        .padding(.top, 40)
-        Spacer()
+        .padding(.top, Self.emptyStateTopPadding)
     }
 
     // MARK: Private
+
+    private static let emptyStateTopPadding: CGFloat = 40
 
     private var errorCategory: ErrorCategory {
         let lower = message.lowercased()

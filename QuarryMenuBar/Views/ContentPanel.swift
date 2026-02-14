@@ -31,6 +31,8 @@ struct ContentPanel: View {
 
     // MARK: Private
 
+    private static let emptyStateTopPadding: CGFloat = 40
+
     private var header: some View {
         HStack {
             Image(systemName: "doc.text.magnifyingglass")
@@ -88,20 +90,20 @@ struct ContentPanel: View {
                     daemon.start()
                 }
                 .buttonStyle(.borderedProminent)
+                Spacer()
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 40)
-            Spacer()
+            .padding(.top, Self.emptyStateTopPadding)
         case .starting:
             VStack(spacing: 8) {
                 ProgressView("Starting Quarry…")
                 Text("Launching the search backend.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                Spacer()
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 40)
-            Spacer()
+            .padding(.top, Self.emptyStateTopPadding)
         case .running:
             SearchPanel(viewModel: searchViewModel)
         case let .error(message):
