@@ -80,7 +80,7 @@ struct SearchPanel: View {
             let sortedKeys = grouped.keys.sorted()
             List {
                 ForEach(sortedKeys, id: \.self) { format in
-                    Section(formatLabel(format)) {
+                    Section {
                         ForEach(grouped[format] ?? []) { result in
                             ResultRow(result: result)
                                 .contentShape(Rectangle())
@@ -88,10 +88,16 @@ struct SearchPanel: View {
                                     selectedResult = result
                                 }
                         }
+                    } header: {
+                        Text(formatLabel(format))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .textCase(nil)
                     }
                 }
             }
             .listStyle(.plain)
+            .listRowSeparator(.visible)
         case let .empty(query):
             VStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")

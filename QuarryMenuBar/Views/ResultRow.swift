@@ -8,7 +8,7 @@ struct ResultRow: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Text(result.documentName)
-                    .font(.headline)
+                    .font(.body.weight(.medium))
                     .lineLimit(1)
                 Spacer()
                 Label("p.\(result.pageNumber)", systemImage: "doc")
