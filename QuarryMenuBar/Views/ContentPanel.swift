@@ -20,6 +20,7 @@ struct ContentPanel: View {
             header
             Divider()
             statusContent
+                .animation(.easeInOut(duration: 0.15), value: daemon.state)
             Divider()
             footer
         }
@@ -74,26 +75,33 @@ struct ContentPanel: View {
     private var statusContent: some View {
         switch daemon.state {
         case .stopped:
-            ContentUnavailableView(
-                "Backend Stopped",
-                systemImage: "stop.circle",
-                description: Text("The search backend is not running.")
-            )
-            Button("Start") {
-                daemon.start()
+            VStack(spacing: 12) {
+                Image(systemName: "stop.circle")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.secondary)
+                Text("Backend Stopped")
+                    .font(.headline)
+                Text("The search backend is not running.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Button("Start") {
+                    daemon.start()
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
-            .padding(.bottom, 8)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 40)
+            Spacer()
         case .starting:
-            VStack {
-                Spacer()
+            VStack(spacing: 8) {
                 ProgressView("Starting Quarry…")
                 Text("Launching the search backend.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .padding(.top, 4)
-                Spacer()
             }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 40)
+            Spacer()
         case .running:
             SearchPanel(viewModel: searchViewModel)
         case let .error(message):

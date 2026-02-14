@@ -11,17 +11,16 @@ struct ErrorStateView: View {
     let onRestart: () -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
-            Spacer()
+        VStack(spacing: 12) {
             Image(systemName: errorIcon)
-                .font(.system(size: 40))
+                .font(.system(size: 28))
                 .foregroundStyle(errorColor)
 
             Text(errorTitle)
                 .font(.headline)
 
             Text(errorDescription)
-                .font(.body)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
@@ -40,8 +39,10 @@ struct ErrorStateView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             }
-            Spacer()
         }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 40)
+        Spacer()
     }
 
     // MARK: Private
