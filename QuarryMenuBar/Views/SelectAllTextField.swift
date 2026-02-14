@@ -3,11 +3,13 @@ import SwiftUI
 
 // MARK: - SelectAllTextField
 
-/// A text field that selects all text when it gains focus, matching Spotlight behavior.
+/// A text field that auto-focuses and selects all text on focus, matching Spotlight.
 ///
-/// SwiftUI's `TextField` positions the cursor at the end on focus. This wrapper
-/// calls `selectText(nil)` on `becomeFirstResponder` so a single keystroke
-/// replaces the previous query. Also intercepts Escape via `cancelOperation(_:)`.
+/// Uses `NSViewRepresentable` wrapping `NSTextField` because SwiftUI's `TextField`
+/// does not support select-all-on-focus. Focus is requested via `makeFirstResponder`
+/// in `updateNSView`. Text selection happens in `controlTextDidBeginEditing` — the
+/// earliest point where the field editor is guaranteed to be installed and ready.
+/// Also intercepts Escape and Return via the delegate's `doCommandBy` selector.
 struct SelectAllTextField: NSViewRepresentable {
 
     // MARK: - Coordinator
@@ -24,8 +26,20 @@ struct SelectAllTextField: NSViewRepresentable {
 
         // MARK: Internal
 
+        /// When true, the next editing session will select all text.
+        var selectAllOnNextFocus = true
+
         var onSubmit: () -> Void
         var onEscape: () -> Void
+
+        func controlTextDidBeginEditing(_ notification: Notification) {
+            guard selectAllOnNextFocus else { return }
+            selectAllOnNextFocus = false
+            guard let field = notification.object as? NSTextField,
+                  let editor = field.currentEditor()
+            else { return }
+            editor.selectAll(nil)
+        }
 
         func controlTextDidChange(_ notification: Notification) {
             guard let field = notification.object as? NSTextField else { return }
@@ -60,7 +74,7 @@ struct SelectAllTextField: NSViewRepresentable {
     var onEscape: () -> Void = {}
 
     func makeNSView(context: Context) -> NSTextField {
-        let field = FocusSelectingTextField()
+        let field = NSTextField()
         field.delegate = context.coordinator
         field.placeholderString = placeholder
         field.isBordered = false
@@ -73,54 +87,22 @@ struct SelectAllTextField: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: NSTextField, context: Context) {
-        if nsView.stringValue != text {
+        // Only update stringValue when the field is NOT being edited, to avoid
+        // clobbering the field editor's state (selection, cursor position).
+        if nsView.currentEditor() == nil, nsView.stringValue != text {
             nsView.stringValue = text
         }
+
         context.coordinator.onSubmit = onSubmit
         context.coordinator.onEscape = onEscape
+
+        // Request focus once after the field is added to a window.
+        if nsView.window != nil, nsView.currentEditor() == nil {
+            nsView.window?.makeFirstResponder(nsView)
+        }
     }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text, onSubmit: onSubmit, onEscape: onEscape)
     }
-
-}
-
-// MARK: - FocusSelectingTextField
-
-/// NSTextField subclass that selects all text each time its window becomes key.
-///
-/// Observes `didBecomeKeyNotification` rather than using `viewDidMoveToWindow`
-/// because SwiftUI calls `updateNSView` after the view is added to the window,
-/// which clears any selection made during setup. The window-key notification
-/// fires after the panel is fully settled, and also re-selects on every panel
-/// open — matching Spotlight's behavior.
-private final class FocusSelectingTextField: NSTextField {
-
-    // MARK: Lifecycle
-
-    deinit {
-        windowObserver.flatMap { NotificationCenter.default.removeObserver($0) }
-    }
-
-    // MARK: Internal
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        windowObserver.flatMap { NotificationCenter.default.removeObserver($0) }
-        windowObserver = nil
-
-        guard let window else { return }
-        windowObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didBecomeKeyNotification,
-            object: window,
-            queue: .main
-        ) { [weak self] _ in
-            self?.selectText(nil)
-        }
-    }
-
-    // MARK: Private
-
-    private var windowObserver: NSObjectProtocol?
 }
