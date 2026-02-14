@@ -20,22 +20,17 @@ struct SearchPanel: View {
             }
         }
         .onAppear {
-            focusedField = .search
+            isSearchFocused = true
         }
     }
 
     // MARK: Private
 
-    private enum FocusField {
-        case search
-        case results
-    }
-
     private static let emptyStateTopPadding: CGFloat = 40
 
     @State private var selectedResult: SearchResult?
     @State private var selectedResultID: SearchResult.ID?
-    @FocusState private var focusedField: FocusField?
+    @FocusState private var isSearchFocused: Bool
 
     private var searchField: some View {
         HStack {
@@ -44,19 +39,24 @@ struct SearchPanel: View {
             TextField("Search documents…", text: $viewModel.query)
                 .textFieldStyle(.plain)
                 .font(.body)
-                .focused($focusedField, equals: .search)
+                .focused($isSearchFocused)
                 .onSubmit {
-                    viewModel.search()
+                    if let id = selectedResultID,
+                       case let .results(results) = viewModel.state,
+                       let result = results.first(where: { $0.id == id }) {
+                        selectedResult = result
+                    } else {
+                        viewModel.search()
+                    }
                 }
                 .onExitCommand {
                     handleEscape()
                 }
                 .onKeyPress(.downArrow) {
-                    if case .results = viewModel.state {
-                        focusedField = .results
-                        return .handled
-                    }
-                    return .ignored
+                    moveSelection(by: 1)
+                }
+                .onKeyPress(.upArrow) {
+                    moveSelection(by: -1)
                 }
         }
         .padding(10)
@@ -108,19 +108,6 @@ struct SearchPanel: View {
                 }
             }
             .listStyle(.plain)
-            .focused($focusedField, equals: .results)
-            .onKeyPress(.return) {
-                if let id = selectedResultID,
-                   let result = results.first(where: { $0.id == id }) {
-                    selectedResult = result
-                    return .handled
-                }
-                return .ignored
-            }
-            .onExitCommand {
-                selectedResultID = nil
-                focusedField = .search
-            }
         case let .empty(query):
             VStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
@@ -180,11 +167,35 @@ struct SearchPanel: View {
     private func handleEscape() {
         if selectedResult != nil {
             selectedResult = nil
-            focusedField = .search
+        } else if selectedResultID != nil {
+            selectedResultID = nil
         } else {
             viewModel.clear()
             NSApp.keyWindow?.close()
         }
+    }
+
+    private func moveSelection(by offset: Int) -> KeyPress.Result {
+        guard case let .results(results) = viewModel.state else { return .ignored }
+        let ordered = flatResults(from: results)
+        guard !ordered.isEmpty else { return .ignored }
+
+        if let currentID = selectedResultID,
+           let currentIndex = ordered.firstIndex(where: { $0.id == currentID }) {
+            let newIndex = currentIndex + offset
+            if ordered.indices.contains(newIndex) {
+                selectedResultID = ordered[newIndex].id
+            }
+        } else {
+            // Nothing selected — Down selects first, Up selects last
+            selectedResultID = offset > 0 ? ordered.first?.id : ordered.last?.id
+        }
+        return .handled
+    }
+
+    private func flatResults(from results: [SearchResult]) -> [SearchResult] {
+        let grouped = Dictionary(grouping: results, by: \.sourceFormat)
+        return grouped.keys.sorted().flatMap { grouped[$0] ?? [] }
     }
 
     private func formatLabel(_ format: String) -> String {
