@@ -31,8 +31,11 @@ enum SyntaxHighlighter {
             return highlightMarkdown(text, fontSize: size)
         }
 
+        let lightMode = NSApp.effectiveAppearance
+            .bestMatch(from: [.aqua, .darkAqua]) == .aqua
+
         let patterns: [(String, NSColor)] = switch format {
-        case ".py": pythonPatterns
+        case ".py": pythonPatterns(lightMode: lightMode)
         default: isCode ? genericCodePatterns : []
         }
 
@@ -63,45 +66,49 @@ enum SyntaxHighlighter {
         ".c", ".cpp", ".h", ".rb", ".sh", ".toml", ".yaml", ".yml", ".json"
     ]
 
-    // MARK: - Python
-
-    private static let pythonPatterns: [(String, NSColor)] = [
-        // Comments (must come first — overrides later matches within comments)
-        (#"#[^\n]*"#, .secondaryLabelColor),
-        // Triple-quoted strings
-        (#""{3}[\s\S]*?"{3}"#, .systemRed),
-        (#"'{3}[\s\S]*?'{3}"#, .systemRed),
-        // Single/double quoted strings
-        (#""[^"\n]*""#, .systemRed),
-        (#"'[^'\n]*'"#, .systemRed),
-        // Keywords
-        (
-            #"\b(def|class|import|from|return|if|else|elif|for|in|while|with|as|not|and|or|try|except|finally|raise|pass|break|continue|yield|lambda|global|nonlocal|assert|del|is|async|await)\b"#,
-            .systemPurple
-        ),
-        // Built-in constants
-        (#"\b(None|True|False|self)\b"#, .systemOrange),
-        // Decorators
-        (#"@\w+"#, .systemTeal),
-        // Numbers
-        (#"\b\d+\.?\d*\b"#, .systemBlue),
-        // Function/class names after keyword
-        (#"(?<=\bdef\s)\w+"#, .systemBlue),
-        (#"(?<=\bclass\s)\w+"#, .systemBlue)
-    ]
-
     // MARK: - Generic (C-family comments + strings)
 
     private static let genericCodePatterns: [(String, NSColor)] = [
-        // Line comments
-        (#"//[^\n]*"#, .secondaryLabelColor),
-        (#"#[^\n]*"#, .secondaryLabelColor),
         // Strings
         (#""[^"\n]*""#, .systemRed),
         (#"'[^'\n]*'"#, .systemRed),
         // Numbers
-        (#"\b\d+\.?\d*\b"#, .systemBlue)
+        (#"\b\d+\.?\d*\b"#, .systemBlue),
+        // Line comments — applied last so they override strings/keywords inside comments
+        (#"//[^\n]*"#, .secondaryLabelColor),
+        (#"#[^\n]*"#, .secondaryLabelColor)
     ]
+
+    // MARK: - Python
+
+    private static func pythonPatterns(lightMode: Bool) -> [(String, NSColor)] {
+        let constantColor: NSColor = lightMode ? .systemBrown : .systemOrange
+        let decoratorColor: NSColor = lightMode ? .systemIndigo : .systemTeal
+        return [
+            // Triple-quoted strings
+            (#""{3}[\s\S]*?"{3}"#, .systemRed),
+            (#"'{3}[\s\S]*?'{3}"#, .systemRed),
+            // Single/double quoted strings
+            (#""[^"\n]*""#, .systemRed),
+            (#"'[^'\n]*'"#, .systemRed),
+            // Keywords
+            (
+                #"\b(def|class|import|from|return|if|else|elif|for|in|while|with|as|not|and|or|try|except|finally|raise|pass|break|continue|yield|lambda|global|nonlocal|assert|del|is|async|await)\b"#,
+                .systemPurple
+            ),
+            // Built-in constants
+            (#"\b(None|True|False|self)\b"#, constantColor),
+            // Decorators
+            (#"@\w+"#, decoratorColor),
+            // Numbers
+            (#"\b\d+\.?\d*\b"#, .systemBlue),
+            // Function/class names after keyword
+            (#"(?<=\bdef\s)\w+"#, .systemBlue),
+            (#"(?<=\bclass\s)\w+"#, .systemBlue),
+            // Comments — applied last so they override keywords/strings inside comments
+            (#"#[^\n]*"#, .secondaryLabelColor)
+        ]
+    }
 
     // MARK: - Markdown (strip syntax, apply formatting)
 
