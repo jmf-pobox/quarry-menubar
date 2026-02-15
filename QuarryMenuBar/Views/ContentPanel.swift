@@ -54,21 +54,13 @@ struct ContentPanel: View {
     private var statusBadge: some View {
         switch daemon.state {
         case .stopped:
-            Label("Stopped", systemImage: "circle")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            statusLabel("Stopped", systemImage: "circle", iconStyle: .secondary)
         case .starting:
-            Label("Starting…", systemImage: "circle.dotted")
-                .font(.caption)
-                .foregroundStyle(.orange)
+            statusLabel("Starting…", systemImage: "circle.dotted", iconStyle: .orange)
         case .running:
-            Label("Running", systemImage: "circle.fill")
-                .font(.caption)
-                .foregroundStyle(.green)
+            statusLabel("Running", systemImage: "circle.fill", iconStyle: .green)
         case let .error(message):
-            Label(message, systemImage: "exclamationmark.triangle.fill")
-                .font(.caption)
-                .foregroundStyle(.red)
+            statusLabel(message, systemImage: "exclamationmark.triangle.fill", iconStyle: .red)
                 .lineLimit(1)
         }
     }
@@ -125,4 +117,19 @@ struct ContentPanel: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
     }
+
+    private func statusLabel(
+        _ title: String,
+        systemImage: String,
+        iconStyle: some ShapeStyle
+    ) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+                .foregroundStyle(iconStyle)
+            Text(title)
+                .foregroundStyle(.primary)
+        }
+        .font(.footnote)
+    }
+
 }
