@@ -19,6 +19,9 @@ struct SearchPanel: View {
                     .animation(.easeInOut(duration: 0.15), value: viewModel.state)
             }
         }
+        .task {
+            await viewModel.loadCollections()
+        }
         .onAppear {
             isSearchFocused = true
         }
@@ -39,8 +42,36 @@ struct SearchPanel: View {
     @State private var scrollAnchor: UnitPoint = .top
     @FocusState private var isSearchFocused: Bool
 
+    private var collectionPicker: some View {
+        Menu {
+            Button("All") {
+                viewModel.selectedCollection = nil
+            }
+            if !viewModel.availableCollections.isEmpty {
+                Divider()
+                ForEach(viewModel.availableCollections, id: \.self) { name in
+                    Button(name) {
+                        viewModel.selectedCollection = name
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 2) {
+                Image(systemName: "folder")
+                Text(viewModel.selectedCollection ?? "All")
+                    .lineLimit(1)
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .contentShape(Rectangle())
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+    }
+
     private var searchField: some View {
         HStack {
+            collectionPicker
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
             TextField("Search documents…", text: $viewModel.query)
