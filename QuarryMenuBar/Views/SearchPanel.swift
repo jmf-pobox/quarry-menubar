@@ -37,8 +37,14 @@ struct SearchPanel: View {
 
     private static let emptyStateTopPadding: CGFloat = 40
 
+    /// Anchor for scroll-to on selection change.
+    /// Upward uses a point slightly below viewport top so partially-visible
+    /// items fully clear sticky section headers and list chrome.
+    private static let scrollAnchorUp = UnitPoint(x: 0.5, y: 0.15)
+
     @State private var selectedResult: SearchResult?
     @State private var selectedResultID: SearchResult.ID?
+
     @State private var scrollAnchor: UnitPoint = .top
     @FocusState private var isSearchFocused: Bool
 
@@ -238,7 +244,7 @@ struct SearchPanel: View {
         let ordered = flatResults(from: results)
         guard !ordered.isEmpty else { return .ignored }
 
-        scrollAnchor = offset > 0 ? .bottom : .top
+        scrollAnchor = offset > 0 ? .bottom : Self.scrollAnchorUp
         if let currentID = selectedResultID,
            let currentIndex = ordered.firstIndex(where: { $0.id == currentID }) {
             let newIndex = currentIndex + offset
